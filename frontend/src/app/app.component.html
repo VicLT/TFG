@@ -1,0 +1,139 @@
+<!--------------------------------- CABECERA ---------------------------------->
+<!--<header class="titulo">-->
+<header class="titulo" (click)="resetApp()">
+  <p><span id="predictor">predictor</span><span>S&P500</span></p>
+</header>
+
+<hr class="separador_header" />
+
+<!---------------------------- MENÚ DE NAVEGACIÓN ----------------------------->
+
+<nav class="navbar">
+  <ul>
+    <li
+      [class.active]="activeTab === 'resumen'"
+      (click)="setActiveTab('resumen')"
+    >
+      Resumen histórico
+    </li>
+    <li
+      [class.active]="activeTab === 'normal'"
+      (click)="setActiveTab('normal')"
+    >
+      Predicción pasada
+    </li>
+    <li
+      [class.active]="activeTab === 'recursiva'"
+      (click)="setActiveTab('recursiva')"
+    >
+      Predicción futura
+    </li>
+  </ul>
+</nav>
+
+<hr class="separador" />
+
+<!---------------------------------- MAIN ------------------------------------->
+
+<main class="main">
+  <div class="formularios">
+    <!-- RESUMEN HISTÓRICO -->
+    @if (activeTab === 'resumen') {
+    <div class="summary-section">
+      @for (label of rangeButtons; track label) {
+      <button
+        class="range-button"
+        [class.active]="activeRange === label"
+        (click)="selectRange(label)"
+      >
+        {{ label }}
+      </button>
+      }
+    </div>
+    }
+
+    <!-- PREDICCIÓN ESTÁNDAR -->
+    @if (activeTab === 'normal') {
+    <div class="form-section-standard">
+      <div class="form-section-input-standard">
+        <div class="input-group">
+          <label for="start-date">Fecha inicio:</label>
+          <input
+            type="date"
+            id="start-date"
+            [(ngModel)]="startDate"
+            name="startDate"
+            min="1980-01-01"
+          />
+        </div>
+        <div class="input-group">
+          <label for="end-date">Fecha fin:</label>
+          <input
+            type="date"
+            id="end-date"
+            [(ngModel)]="endDate"
+            name="endDate"
+            max="{{ yesterday }}"
+          />
+        </div>
+        <div class="form-section-button">
+          <button class="standard-button" (click)="getPrediction()">
+            CALCULAR
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!--- PREDICCIÓN RECURSIVA -->
+    @if (activeTab === 'recursiva') {
+    <div class="form-section-recursive">
+      <div class="form-section-input-recursive">
+        <label id="future-days-label" for="future-days">Días futuros:</label>
+        <input
+          type="number"
+          id="future-days"
+          [(ngModel)]="futureDays"
+          name="futureDays"
+          min="1"
+          max="180"
+        />
+        <div class="form-section-button">
+          <button class="recursive-button" (click)="getRecursivePrediction()">
+            CALCULAR
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- GRÁFICA -->
+  <div class="grafica">
+    <canvas
+      baseChart
+      [data]="chartData"
+      [options]="chartOptions"
+      type="line"
+      [legend]="true"
+    >
+    </canvas>
+  </div>
+
+  <!-- LOADER -->
+  @if (isLoading) {
+  <div class="loader-overlay">
+    <div class="loader"></div>
+  </div>
+  }
+</main>
+
+<hr class="separador" />
+
+<!----------------------------------- PIE ------------------------------------->
+
+<footer>
+  <p>©2025 - Todos los derechos reservados.</p>
+</footer>
+
+<router-outlet />

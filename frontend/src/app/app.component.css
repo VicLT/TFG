@@ -1,0 +1,333 @@
+/* -------------------------------- CABECERA -------------------------------- */
+
+.titulo {
+  display: inline-block;
+  text-align: center;
+  width: 100%;
+  color: #b3b3b3;
+  font-size: xx-large;
+  font-style: oblique;
+  cursor: pointer;
+}
+
+.titulo p {
+  margin: 15px 0px 20px 0px;
+}
+
+#predictor {
+  font-weight: bold;
+  color: white;
+}
+
+.separador_header {
+  width: 100%;
+  height: 3px;
+  background-color: #00aa76;
+  margin: 0px;
+  border-width: 0px;
+}
+
+/* --------------------------- MENÚ DE NAVEGACIÓN --------------------------- */
+
+.navbar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  background-color: #101518;
+  padding: 10px 0;
+}
+
+.navbar ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  gap: 10px;
+  margin: 10px 0;
+  justify-content: center;
+  width: 100%;
+}
+
+.navbar li {
+  flex: 1 1 auto;
+  padding: 10px;
+  min-width: 120px;
+  max-width: 200px;
+  text-align: center;
+  cursor: pointer;
+  color: white;
+  border-radius: 5px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.navbar li:hover {
+  background-color: #9fd7ff;
+  color: black;
+}
+
+.navbar li.active {
+  background-color: #9fd7ff;
+  color: black;
+}
+
+@media (max-width: 600px) {
+  .navbar li {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}
+
+/* Separador */
+hr {
+  margin: 0px;
+}
+
+/* ---------------------------------- MAIN ---------------------------------- */
+
+.main {
+  position: relative;
+  background-color: #14181c;
+  padding-bottom: 20px;
+}
+
+/* ------------------------------- FORMULARIOS ------------------------------ */
+
+.formularios {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px 30px 20px;
+  flex-direction: column;
+  gap: 20px;
+  height: 100px;
+}
+
+/* ---------------------------- RESUMEN HISTÓRICO --------------------------- */
+
+.summary-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.range-button {
+  flex: 1 1 calc(15% - 10px);
+  width: 40px;
+  height: 30px;
+  background-color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: black;
+  font-weight: bold;
+}
+
+.range-button:hover {
+  color: red;
+  transition: color 0.2s ease;
+}
+
+.range-button.active {
+  color: white;
+  background-color: red;
+}
+
+/* ---------------------- FORMULARIO PREDICCIÓN PASADA ---------------------- */
+
+.form-section-standard {
+  display: flex;
+  justify-content: center;
+}
+
+.form-section-input-standard {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  padding-bottom: 15px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-group label {
+  margin-bottom: 5px;
+  color: white;
+}
+
+input[type="date"] {
+  padding: 5px;
+  text-align: center;
+  width: 125px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  height: 19px;
+}
+
+.form-section-button {
+  display: flex;
+  align-items: center;
+}
+
+.standard-button {
+  padding: 8px 16px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 125px;
+  height: 31px;
+}
+
+.standard-button:hover {
+  opacity: 0.7;
+}
+
+/* ---------------------- FORMULARIO PREDICCIÓN FUTURA ---------------------- */
+
+.form-section-recursive {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.form-section-input-recursive {
+  display: flex;
+  gap: 20px;
+  padding-top: 23px;
+}
+
+input[type="number"] {
+  padding: 7px;
+  text-align: center;
+  width: 100px;
+  height: 15px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#future-days-label {
+  padding-top: 5px;
+  width: 125px;
+  text-align: right;
+}
+
+.recursive-button {
+  padding: 8px 16px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 125px;
+  height: 32px;
+}
+
+.recursive-button:hover {
+  opacity: 0.7;
+}
+
+/* ---------------------- RESPONSIVE FORMULARIOS ---------------------- */
+
+@media (max-width: 600px) {
+    .formularios {
+        padding: 60px 20px 60px 20px;
+      }
+
+  .form-section-input-standard,
+  .form-section-input-recursive {
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 10px;
+    row-gap: 10px;
+    width: 300px;
+    padding: 10px;
+    justify-content: center;
+  }
+
+  .input-group label,
+  #future-days-label {
+    width: 140px;
+    text-align: left;
+  }
+
+  input[type="date"],
+  input[type="number"] {
+    width: 140px;
+    height: 35px;
+    box-sizing: border-box;
+  }
+
+  .form-section-recursive {
+    padding-top: 37px;
+  }
+
+  .form-section-button {
+    grid-column: 1 / 3;
+    justify-self: center;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .standard-button,
+  .recursive-button {
+    width: 100%;
+    height: 40px;
+  }
+}
+
+/* -------------------------------- GRÁFICA --------------------------------- */
+
+.grafica {
+  height: 500px;
+  background-color: #14181c;
+  margin-bottom: 10px;
+}
+
+/* --------------------------------- FOOTER --------------------------------- */
+
+footer {
+  background-color: black;
+  text-align: center;
+  color: white;
+}
+
+/* --------------------------- ANIMACIÓN DE CARGA --------------------------- */
+
+.loader-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  border-radius: 0;
+}
+
+.loader {
+  border: 8px solid rgba(255, 255, 255, 0.3);
+  border-top: 8px solid #00aa76;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
