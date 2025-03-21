@@ -239,8 +239,8 @@ export class AppComponent implements OnInit {
     this.activeRange = period;
 
     this.http
-      .post<any>('http://127.0.0.1:8000/history', { period: period })
-      //.post<any>('/api/history', { period: period })
+      //.post<any>('http://127.0.0.1:8000/history', { period: period })
+      .post<any>('/api/history', { period: period })
       .subscribe(
         (response) => {
           const dates = response.dates.map((d: string) => new Date(d));
@@ -312,8 +312,8 @@ export class AppComponent implements OnInit {
     this.isLoading = true;
 
     this.http
-      .post<any>('http://127.0.0.1:8000/normal_prediction', {
-        //.post<any>('/api/normal_prediction', {
+      //.post<any>('http://127.0.0.1:8000/normal_prediction', {
+      .post<any>('/api/normal_prediction', {
         start_date: this.startDate,
         end_date: this.endDate,
       })
@@ -418,8 +418,8 @@ export class AppComponent implements OnInit {
     this.isLoading = true;
 
     this.http
-      .post<any>('http://127.0.0.1:8000/recursive_prediction', {
-        //.post<any>('/api/recursive_prediction', {
+      //.post<any>('http://127.0.0.1:8000/recursive_prediction', {
+      .post<any>('/api/recursive_prediction', {
         days: this.futureDays,
       })
       .pipe(takeUntil(this.destroy$))
