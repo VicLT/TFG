@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# IMPORTACIONES
+# ### IMPORTACIONES
+
+# In[1]:
+
 
 import pandas as pd
 import numpy as np
@@ -15,72 +18,116 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import yfinance as yf
 
-# CARGAR MODELO ENTRENADO Y SCALER
+
+# ### CARGAR MODELO ENTRENADO Y SCALER
+
+# In[2]:
+
 
 MODEL_PATH = 'trained_model.keras'
 SCALER_PATH = 'scaler.pkl'
 
+
+# In[3]:
+
+
 model = tf.keras.models.load_model(MODEL_PATH)
+
+
+# In[4]:
+
 
 with open(SCALER_PATH, 'rb') as f:
     scaler = pickle.load(f)
 
-# FAST-API SETUP
+
+# ### FAST-API SETUP
+
+# In[5]:
+
 
 app = FastAPI(title="S&P500 Predictor API")
 
+
+# In[6]:
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],  # Solo permite Angular en local
+    allow_origins=["http://localhost:4200"],  # Solo permite Angular local
     allow_credentials=True,
     allow_methods=["*"],  # Permitir todos los métodos (GET, POST, etc.)
     allow_headers=["*"],  # Permitir todas las cabeceras (headers)
-)
+)  
 
-# MODELOS PYDANTIC
 
-class DateRangeHistory(BaseModel):
-    period: str
+# ### MODELOS PYDANTIC
+
+# In[7]:
+
 
 class DateRangePast(BaseModel):
     start_date: str
     end_date: str
 
+
+# In[8]:
+
+
 class DateRangeFuture(BaseModel):
     days: int
 
-# END-POINT 1 -> ALL PRICES HISTORY
 
-@app.post("/history")
-def get_history(date_range_history: DateRangeHistory):
-    try:
-        # Descargar histórico completo
-        df = yf.download('^GSPC', period=date_range_history.period, auto_adjust=True)
+# ### END-POINT 1 -> ALL PRICES HISTORY
 
-        if df.empty:
-            raise HTTPException(status_code=404, detail="No se encontraron datos históricos del S&P 500.")
+# In[9]:
 
-        # Acceder correctamente a la columna 'Close'
-        close_series = df[('Close', '^GSPC')]
 
-        # Fechas y valores
-        dates = close_series.index.strftime('%Y-%m-%d').tolist()
-        values = close_series.round(2).tolist()
+historical_data = None 
 
-        # Guardar en caché
-        return {
-            "dates": dates,
-            "values": values,
-            "total_points": len(values),
-            "message": f"Histórico S&P500 para período '{date_range_history.period}'"
-        }
+@app.get("/history")
+def get_history():
+    global historical_data
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener datos históricos: {str(e)}")
+    if historical_data is None:
+        try:
+            # Descargar histórico completo
+            df = yf.download('^GSPC', period='max', auto_adjust=True)
 
-# END-POINT 2 -> NORMAL PREDICTION FOR THE PAST
+            if df.empty:
+                raise HTTPException(status_code=404, detail="No se encontraron datos históricos del S&P 500.")
+
+            # Acceder correctamente a la columna 'Close' con MultiIndex
+            close_series = df[('Close', '^GSPC')]
+
+            # Fechas y valores
+            dates = close_series.index.strftime('%Y-%m-%d').tolist()
+            values = close_series.round(2).tolist()
+
+            # Guardar en caché
+            historical_data = {
+                "dates": dates,
+                "values": values,
+                "total_points": len(values),
+                "message": "Histórico completo del S&P 500 desde inicio hasta hoy."
+            }
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al obtener datos históricos: {str(e)}")
+
+    return historical_data
+
+
+# ### END-POINT 2 -> NORMAL PREDICTION FOR THE PAST
+
+# In[10]:
+
 
 last_prediction_metrics = None
+
+
+# In[11]:
+
 
 @app.post("/normal_prediction")
 def normal_prediction(date_range_past: DateRangePast):
@@ -89,19 +136,16 @@ def normal_prediction(date_range_past: DateRangePast):
     try:
         # Calcular fecha extendida (pedimos más datos para generar las primeras ventanas)
         start_date_obj = datetime.strptime(date_range_past.start_date, "%Y-%m-%d")
-        extended_start_date = start_date_obj - timedelta(days=91)
+        extended_start_date = start_date_obj - timedelta(days=90)  # Mejor más de 60 para asegurarse
         extended_start_date_str = extended_start_date.strftime("%Y-%m-%d")
-        
-        end_date_obj = datetime.strptime(date_range_past.end_date, "%Y-%m-%d") + timedelta(days=1)
-        end_date_str = end_date_obj.strftime("%Y-%m-%d")
 
         # Descargar datos desde fecha extendida
-        df = yf.download('^GSPC', start=extended_start_date_str, end=end_date_str, auto_adjust=True)
+        df = yf.download('^GSPC', start=extended_start_date_str, end=date_range_past.end_date, auto_adjust=True)
 
         if df.empty:
             raise HTTPException(status_code=404, detail="No se encontraron datos para las fechas especificadas.")
 
-        df_closing_prices = df[['Close']]
+        df_closing_prices = df[['Close']]  # Mantener solo la columna 'Close'
 
         # Usar scaler original (entrenado)
         data = scaler.transform(df_closing_prices)
@@ -109,8 +153,8 @@ def normal_prediction(date_range_past: DateRangePast):
         # Generar secuencias
         X_test, y_real_scaled = [], []
         for i in range(60, len(data)):
-            X_test.append(data[i-60:i, 0])
-            y_real_scaled.append(data[i, 0])
+            X_test.append(data[i-60:i, 0])      # Ventana de 60 días
+            y_real_scaled.append(data[i, 0])    # Valor real para esa secuencia
 
         if not X_test:
             raise HTTPException(status_code=400, detail="No hay suficientes datos (mínimo 60 días).")
@@ -128,16 +172,10 @@ def normal_prediction(date_range_past: DateRangePast):
         all_dates = df_closing_prices.index[60:].strftime('%Y-%m-%d').tolist()
 
         # Filtrar las fechas y predicciones a partir de la fecha real solicitada (start_date)
-        start_index = None
-        for i in range(len(all_dates)):
-            if all_dates[i] >= date_range_past.start_date:
-                start_index = i
-                break 
-        if start_index is not None and start_index > 0:
-            start_index -= 1
+        start_index = next((i for i, date in enumerate(all_dates) if date >= date_range_past.start_date), None)
         final_dates = all_dates[start_index:]
         final_predictions = y_pred.flatten().tolist()[start_index:]
-        final_real_values = y_real[start_index:].flatten().tolist()
+        final_real_values = y_real[start_index:].flatten().tolist()  # Valores reales alineados
 
         # Filtrar también y_real para calcular métricas solo desde start_date
         y_real_filtered = y_real[start_index:]
@@ -158,7 +196,6 @@ def normal_prediction(date_range_past: DateRangePast):
             "Relative_RMSE_%": round(relative_rmse, 2)
         }
 
-        # Devolver respuesta final correcta y alineada
         return {
             "predictions": final_predictions,
             "real_values": final_real_values,
@@ -169,36 +206,55 @@ def normal_prediction(date_range_past: DateRangePast):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# END-POINT 3 -> RECURSIVE PREDICTION FOR THE FUTURE
+
+# ### END-POINT 3 -> RECURSIVE PREDICTION FOR THE FUTURE
+
+# In[12]:
+
 
 def create_dataset(data, time_step):
     X_total, y_total = [], []
     
     for i in range(time_step, len(data)):
-        X_total.append(data[i-time_step:i, 0])
+        X_total.append(data[i-time_step:i, 0])  # Los últimos 60 días
         y_total.append(data[i, 0])  # El precio de cierre del día siguiente
     
     return np.array(X_total), np.array(y_total)
 
+
+# In[13]:
+
+
 df = yf.download('^GSPC', period='max', auto_adjust=True)
 df_closing_prices = df[['Close']]
 
+
+# In[14]:
+
+
 training_set_scaled = scaler.fit_transform(df_closing_prices)
+
 last_days = training_set_scaled[-61:].astype(np.float32)
+
 X_test, y_test = create_dataset(last_days, 60)
 
-def generate_future_dates(num_days: int):
-    future_dates = []
-    current_day = datetime.today() + timedelta(days=1)
-    days_added = 0
-    
-    while days_added < num_days:
-        if current_day.weekday() < 5:
-            future_dates.append(current_day.strftime('%Y-%m-%d'))
-            days_added += 1
-        current_day += timedelta(days=1)
 
+# In[15]:
+
+
+start_date = datetime.today()
+
+
+# In[16]:
+
+
+def generate_future_dates(num_days: int):
+    future_dates = [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(num_days + 1)]
     return future_dates
+
+
+# In[17]:
+
 
 @app.post("/recursive_prediction")
 def recursive_prediction(date_range_future: DateRangeFuture):
@@ -211,8 +267,11 @@ def recursive_prediction(date_range_future: DateRangeFuture):
         # Lista para almacenar predicciones futuras
         future_prediction = []
         
+        # Diferencia entre el último valor real y el anterior (para ajustar tendencia correctamente)
+        real_trend = training_set_scaled[-1] - training_set_scaled[-2]
+        
         for _ in range(date_range_future.days):  # 20 días financieros ~ 1 mes normal
-            # Convertir la secuencia a un tensor de TensorFlow
+            # Convertir la secuencia a tensor de TensorFlow correctamente
             sequence_for_pred_tensor = tf.convert_to_tensor(X_test_selection.reshape(1, 60, 1), dtype=tf.float32)
         
             # Predecir el siguiente valor
@@ -236,22 +295,26 @@ def recursive_prediction(date_range_future: DateRangeFuture):
         prediction_original_scale = scaler.inverse_transform(np.array(future_prediction).reshape(-1, 1))
         
         # Preparar fechas
-        end_date = datetime.today() + timedelta(days=date_range_future.days - 1)
+        end_date = start_date + timedelta(days=date_range_future.days)
 
-        # Devolver respuesta final correcta y alineada
         return {
             "predictions": prediction_original_scale.flatten().tolist(),
             "dates": generate_future_dates(date_range_future.days),
-            "message": f"Predicciones de S&P500 desde {datetime.today().strftime('%Y-%m-%d')} hasta {end_date.strftime('%Y-%m-%d')}"
+            "message": f"Predicciones de S&P500 desde {start_date.strftime('%Y-%m-%d')} hasta {end_date.strftime('%Y-%m-%d')}"
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# END-POINT 4 -> ERROR METRICS
+
+# ### END-POINT 4 -> ERROR METRICS
+
+# In[18]:
+
 
 @app.post("/metrics")
 def get_metrics():
     if last_prediction_metrics is None:
         raise HTTPException(status_code=404, detail="No se ha realizado ninguna predicción aún.")
     return last_prediction_metrics
+
